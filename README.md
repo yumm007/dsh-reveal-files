@@ -12,6 +12,7 @@ in your native file browser, or open a terminal cd'ed into its directory.
 - Each produced file chip opens a compact **dropdown menu** on click — no
   accidental direct opens, one menu per file:
   - 📂 **Open** — open with the default application (the original behavior).
+  - 📋 **Copy file path** — copy the absolute path to the system clipboard.
   - 📁 **Show in file browser** — macOS Finder (`open -R`, selects the file),
     Linux file manager (`xdg-open` on the parent folder), Windows Explorer
     (`explorer /select,`).

@@ -15,8 +15,10 @@ window.__ModuleLoader__.load({ id: "dsh-reveal-files", factory: (require) => {
   var zh = {
     "reveal.label": "产物",
     "reveal.open": "打开",
+    "reveal.copyPath": "拷贝文件路径",
     "reveal.reveal": "在文件浏览器中显示",
     "reveal.terminal": "在终端中显示路径",
+    "reveal.errorCopyPath": "拷贝失败",
     "reveal.errorReveal": "在文件浏览器中显示失败",
     "reveal.errorTerminal": "在终端中显示失败",
     "reveal.err.method-not-allowed": "请求方式不允许",
@@ -28,8 +30,10 @@ window.__ModuleLoader__.load({ id: "dsh-reveal-files", factory: (require) => {
   var en = {
     "reveal.label": "Produced",
     "reveal.open": "Open",
+    "reveal.copyPath": "Copy file path",
     "reveal.reveal": "Show in file browser",
     "reveal.terminal": "Show paths in terminal",
+    "reveal.errorCopyPath": "Failed to copy",
     "reveal.errorReveal": "Failed to show in file browser",
     "reveal.errorTerminal": "Failed to show in terminal",
     "reveal.err.method-not-allowed": "Method not allowed",
@@ -158,6 +162,38 @@ window.__ModuleLoader__.load({ id: "dsh-reveal-files", factory: (require) => {
       if (openFile !== undefined) openFile(path);
     };
 
+    /** Copy one path to the system clipboard; native API with fallback. */
+    var copyPath = function (path) {
+      if (busy) return;
+      var succeed = function () {
+        setState({ menuFor: null, busy: false, error: null });
+      };
+      var fail = function () {
+        setState({ menuFor: path, busy: false, error: t("reveal.errorCopyPath") });
+      };
+      setState({ menuFor: path, busy: true, error: null });
+      if (navigator !== undefined && navigator.clipboard !== undefined && typeof navigator.clipboard.writeText === "function") {
+        navigator.clipboard.writeText(path).then(succeed, fail);
+        return;
+      }
+      // Rare path: Clipboard API unavailable (http page, old engine).
+      try {
+        var ta = document.createElement("textarea");
+        ta.value = path;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        var copied = document.execCommand("copy");
+        document.body.removeChild(ta);
+        if (copied === true) succeed();
+        else fail();
+      } catch (err) {
+        fail();
+      }
+    };
+
     // Clicking anywhere outside a chip closes the open dropdown.
     var outsideRef = React.useRef(null);
     React.useEffect(function () {
@@ -202,6 +238,11 @@ window.__ModuleLoader__.load({ id: "dsh-reveal-files", factory: (require) => {
                 "button",
                 { type: "button", role: "menuitem", className: "rfv-item", disabled: busy, onClick: function () { openPath(path); } },
                 t("reveal.open")
+              ),
+              React.createElement(
+                "button",
+                { type: "button", role: "menuitem", className: "rfv-item", disabled: busy, onClick: function () { copyPath(path); } },
+                t("reveal.copyPath")
               ),
               React.createElement(
                 "button",
