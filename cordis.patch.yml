@@ -1,0 +1,8 @@
+# dsh-reveal-files bundle patch: one cordis row registering the dual-face plugin.
+# The row id must match the host half's exported cordis `name`.
+- insert:
+    - id: dsh-reveal-files
+      name: 'dsh-reveal-files'
+      config:
+        enabled: true
+        revealTimeoutMs: 10000

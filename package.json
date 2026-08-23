@@ -1,0 +1,52 @@
+{
+  "name": "dsh-reveal-files",
+  "version": "0.1.0",
+  "description": "DeepSeek Harness plugin: adds a folder icon next to the produced-files row that reveals the files in the native file browser (macOS Finder / Linux file manager).",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./client": "./client/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "client",
+    "cordis.patch.yml",
+    "LICENSE",
+    "CHANGELOG.md",
+    "README.md",
+    "README.en.md"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "deepseek",
+    "harness",
+    "dsh",
+    "cordis",
+    "plugin",
+    "finder",
+    "reveal",
+    "files"
+  ],
+  "engines": {
+    "node": ">=22.6.0"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime"
+      ],
+      "platform": "web"
+    }
+  }
+}
