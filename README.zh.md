@@ -34,8 +34,8 @@ DeepSeek Harness 双面插件:在每条助手消息的「产物」行(产出文�
 ## 安装
 
 ```bash
-# 在本插件目录安装到 web profile(推荐使用 file:/ 绝对路径)
-dsh plugin --profile web add file:/绝对路径/dsh-reveal-files
+# 从 GitHub 安装(pnpm 的 git spec;#main 固定主分支):
+dsh plugin --profile web add github:yumm007/dsh-reveal-files#main
 ```
 
 `dsh plugin` 会在 profile 目录内把参数转发给 pnpm,随后自动对账
@@ -97,11 +97,12 @@ dsh plugin --profile web remove dsh-reveal-files
 
 ## 开发
 
-修改 `client/client.js` 或 `lib/index.js` 后,同步已安装副本:
+本地开发时可直接安装工作区副本(从磁盘安装,编辑后通过
+`dsh plugin --profile web update dsh-reveal-files` 更新):
 
 ```bash
-dsh plugin --profile web update dsh-reveal-files
-# 或本地文件: dsh plugin --profile web add file:... --force
+dsh plugin --profile web add file:/绝对路径/dsh-reveal-files
+# 编辑后: dsh plugin --profile web update dsh-reveal-files
 ```
 
 webServer 以 rev 哈希 URL 从磁盘提供 client bundle,刷新即可看到 Client

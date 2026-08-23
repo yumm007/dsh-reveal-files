@@ -36,8 +36,8 @@ application — is preserved unchanged.
 ## Installation
 
 ```bash
-# From the plugin checkout (use an absolute file: spec):
-dsh plugin --profile web add file:/absolute/path/to/dsh-reveal-files
+# Install from GitHub (pnpm git spec; #main pins the default branch):
+dsh plugin --profile web add github:yumm007/dsh-reveal-files#main
 ```
 
 `dsh plugin` forwards the arguments to pnpm inside the profile directory and
@@ -107,11 +107,12 @@ the web profile afterwards.
 
 ## Development
 
-Edit `client/client.js` or `lib/index.js`, then re-sync the installed copy:
+For local development against a checkout (installs from disk, so edits are
+picked up by `dsh plugin --profile web update dsh-reveal-files`):
 
 ```bash
-dsh plugin --profile web update dsh-reveal-files
-# or, for a local file: install: dsh plugin --profile web add file:... --force
+dsh plugin --profile web add file:/absolute/path/to/dsh-reveal-files
+# after editing: dsh plugin --profile web update dsh-reveal-files
 ```
 
 The web server serves the client bundle from disk with a rev-hashed URL, so a
