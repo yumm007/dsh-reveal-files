@@ -194,7 +194,7 @@ window.__ModuleLoader__.load({ id: "dsh-reveal-files", factory: (require) => {
       }
     };
 
-    // Clicking anywhere outside a chip closes the open dropdown.
+    // Clicking anywhere outside the row closes the open dropdown.
     var outsideRef = React.useRef(null);
     React.useEffect(function () {
       function onDocClick(event) {
@@ -213,12 +213,12 @@ window.__ModuleLoader__.load({ id: "dsh-reveal-files", factory: (require) => {
       React.createElement("span", { className: "rfv-label" }, t("reveal.label")),
       React.createElement(
         "div",
-        { className: "rfv-row", "data-produced-files-row": true },
+        { ref: outsideRef, className: "rfv-row", "data-produced-files-row": true },
         paths.map(function (path) {
           var open = menuFor === path;
           return React.createElement(
             "div",
-            { key: path, className: "rfv-chip", ref: outsideRef },
+            { key: path, className: "rfv-chip" },
             React.createElement(
               "button",
               {
