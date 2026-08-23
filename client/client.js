@@ -17,18 +17,26 @@ window.__ModuleLoader__.load({ id: "dsh-reveal-files", factory: (require) => {
     "reveal.open": "打开",
     "reveal.reveal": "在文件浏览器中显示",
     "reveal.terminal": "在终端中显示路径",
-    "reveal.error": "操作失败",
     "reveal.errorReveal": "在文件浏览器中显示失败",
-    "reveal.errorTerminal": "在终端中显示失败"
+    "reveal.errorTerminal": "在终端中显示失败",
+    "reveal.err.method-not-allowed": "请求方式不允许",
+    "reveal.err.invalid-body": "请求内容无效",
+    "reveal.err.no-paths": "没有可显示的路径",
+    "reveal.err.unsupported-platform": "当前系统平台不支持该操作",
+    "reveal.err.operation-failed": "操作失败"
   };
   var en = {
     "reveal.label": "Produced",
     "reveal.open": "Open",
     "reveal.reveal": "Show in file browser",
     "reveal.terminal": "Show paths in terminal",
-    "reveal.error": "Operation failed",
     "reveal.errorReveal": "Failed to show in file browser",
-    "reveal.errorTerminal": "Failed to show in terminal"
+    "reveal.errorTerminal": "Failed to show in terminal",
+    "reveal.err.method-not-allowed": "Method not allowed",
+    "reveal.err.invalid-body": "Invalid request body",
+    "reveal.err.no-paths": "No paths to show",
+    "reveal.err.unsupported-platform": "Unsupported platform",
+    "reveal.err.operation-failed": "Operation failed"
   };
 
   /** Last path segment — the part that identifies the file at a glance. */
@@ -91,7 +99,9 @@ window.__ModuleLoader__.load({ id: "dsh-reveal-files", factory: (require) => {
       } catch (error) { /* cwd stays undefined */ }
     }
 
-    /** POST one path to a Host route; resolves to { ok, error } outcome. */
+    /** POST one path to a Host route; resolves to { ok, error } outcome.
+     *  The Host answers { ok:false, code, error }; the stable `code` localizes
+     *  here, the raw `error` string stays as diagnostics. */
     function post(path, url, failKey) {
       return fetch(url, {
         method: "POST",
@@ -100,12 +110,19 @@ window.__ModuleLoader__.load({ id: "dsh-reveal-files", factory: (require) => {
       }).then(function (res) {
         return res.json().then(function (data) {
           if (!res.ok || data === null || data.ok !== true) {
+            var code = data !== null && typeof data === "object" && typeof data.code === "string" ? data.code : "";
+            if (code !== "") {
+              var localized = t("reveal.err." + code);
+              if (typeof localized === "string" && localized.indexOf("reveal.err.") !== 0) {
+                return { ok: false, error: localized };
+              }
+            }
             return { ok: false, error: data !== null && typeof data === "object" && typeof data.error === "string" ? data.error : t(failKey) };
           }
           return { ok: true };
         });
       }, function () {
-        return { ok: false, error: t("reveal.error") };
+        return { ok: false, error: t(failKey) };
       });
     }
 
