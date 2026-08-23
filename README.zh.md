@@ -2,30 +2,27 @@
 
 [English](README.md) | [简体中文](README.zh.md)
 
-DeepSeek Harness 双面插件:在每条助手消息的「产物」行(产出文件行)旁边
-添加一个**文件夹图标按钮**,点击后在**系统文件浏览器**中定位这些文件。
-
-- 🍎 macOS → Finder 中显示(`open -R`,会选中文件)
-- 🐧 Linux → 打开文件所在文件夹(`xdg-open`)
-- 🪟 Windows → Explorer 中选中(`explorer /select,`)
-
-原有的「点击文件名打开文件」行为保持不变。
+DeepSeek Harness 双面插件:把「产物」行(产出文件行)里的每个文件 chip
+改成**点击弹出下拉菜单**,菜单提供按文件操作:打开文件、在文件浏览器中
+定位、以及在终端中进入该文件目录。
 
 ## 功能特性
 
-- 两个内联单行图标按钮,紧贴产物文件的 chips,不额外占行。
-- 📁 **在文件浏览器中显示** —— macOS Finder(`open -R`,会选中文件)、
-  Linux 文件管理器(`xdg-open` 打开所在目录)、Windows Explorer
-  (`explorer /select,`)。
-- ⌨️ **在终端中打开** —— 打开一个系统终端窗口并**置顶激活**,已 `cd` 进入
-  文件所在目录,可直接继续操作:macOS Terminal.app(激活到前台)、Linux
-  `x-terminal-emulator` / `gnome-terminal` / `konsole`、Windows `cmd`。
-- Tooltip 与 `aria-label` 无障碍标注;标签跟随界面语言(简体中文 / 英文)。
-- 一个回合产出多个文件时会全部处理(每个文件一个窗口,或 Linux 下每个
-  父目录打开一个文件夹)。
+- 每个产物文件 chip 点击后弹出**下拉菜单**,按文件独立操作,不再是
+  点击直接打开:
+  - 📂 **打开** —— 用默认应用打开(原有行为)。
+  - 📁 **在文件浏览器中显示** —— macOS Finder(`open -R`,会选中文件)、
+    Linux 文件管理器(`xdg-open` 打开所在目录)、Windows Explorer
+    (`explorer /select,`)。
+  - ⌨️ **在终端中显示路径** —— 打开一个系统终端窗口并**置顶激活**,已
+    `cd` 进入文件所在目录,可直接继续操作:macOS Terminal.app(激活到
+    前台)、Linux `x-terminal-emulator` / `gnome-terminal` / `konsole`、
+    Windows `cmd`。
+- 菜单标签跟随界面语言(简体中文 / 英文);菜单项带 `role="menuitem"`,
+  chip 暴露 `aria-haspopup` / `aria-expanded`。
 - 相对路径按会话工作目录解析。
-- 出错时(如沙箱拒绝、平台不支持)图标变红,原因在 Tooltip 中显示;
-  定位中图标禁用。
+- 出错时(如沙箱拒绝、平台不支持)错误显示在打开的菜单内;动作执行
+  期间菜单保持打开、菜单项禁用。
 - 除 Harness 自身外零运行时依赖:Host 仅用 `node:child_process`,
   Client 仅用平台的 `react` 种子。
 
@@ -58,16 +55,16 @@ profile 层栈——无需手动编辑 `cordis.yml`。
 dsh web
 ```
 
-插件作为 bundle 在启动时加载:Host 半部注册 `POST /api/reveal-files` 路由,
-Client 半部在产物文件行挂载图标。
+插件作为 bundle 在启动时加载:Host 半部注册 `POST /api/reveal-files` 与
+`POST /api/show-in-terminal` 路由,Client 半部在产物文件行挂载下拉菜单。
 
 ## 使用方法
 
 1. 让助手在一个回合内产出若干文件(任意 `write` / `edit` / 变更类工具结果)。
 2. 在该消息下方找到带文件 chips 的「产物」行。
-3. 点击 chips 旁的文件夹图标——文件在系统文件浏览器中打开并被选中或定位;
-   或点击终端图标——打开一个置顶的终端窗口,已进入文件所在目录。
-4. 悬停图标可看 Tooltip;若定位失败,Tooltip 会显示错误原因,图标变红。
+3. 点击某个文件 chip——弹出小菜单:**打开** / **在文件浏览器中显示** /
+   **在终端中显示路径**,选择其一;点击菜单外任意处或完成选择后菜单关闭。
+4. 若操作失败,错误以红色显示在菜单内;动作执行期间菜单项保持禁用。
 
 ## 配置
 

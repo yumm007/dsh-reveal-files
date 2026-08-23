@@ -1,7 +1,8 @@
 // dsh-reveal-files client half — web module format consumed by the client
 // module system (`window.__ModuleLoader__.load`). Registers the turn-tail
-// chain entry that renders the produced-files row with a reveal-in-folder
-// icon button; the button asks the Host route `POST /api/reveal-files`.
+// chain entry that renders the produced-files row; clicking a file chip opens
+// a small dropdown with per-file actions: Open, Reveal in file browser, and
+// Open in terminal (cd into the file's directory).
 window.__ModuleLoader__.load({ id: "dsh-reveal-files", factory: (require) => {
   "use strict";
   var module = { exports: {} };
@@ -13,19 +14,21 @@ window.__ModuleLoader__.load({ id: "dsh-reveal-files", factory: (require) => {
   /** Locale dictionaries registered against the client locale service. */
   var zh = {
     "reveal.label": "产物",
-    "reveal.inFolder": "在文件浏览器中显示",
-    "reveal.inTerminal": "在终端中显示路径",
-    "reveal.error": "在文件浏览器中显示失败",
-    "reveal.errorTerminal": "在终端中显示失败",
-    "reveal.unknownError": "操作失败"
+    "reveal.open": "打开",
+    "reveal.reveal": "在文件浏览器中显示",
+    "reveal.terminal": "在终端中显示路径",
+    "reveal.error": "操作失败",
+    "reveal.errorReveal": "在文件浏览器中显示失败",
+    "reveal.errorTerminal": "在终端中显示失败"
   };
   var en = {
     "reveal.label": "Produced",
-    "reveal.inFolder": "Show in file browser",
-    "reveal.inTerminal": "Show paths in terminal",
-    "reveal.error": "Failed to show in file browser",
-    "reveal.errorTerminal": "Failed to show in terminal",
-    "reveal.unknownError": "Operation failed"
+    "reveal.open": "Open",
+    "reveal.reveal": "Show in file browser",
+    "reveal.terminal": "Show paths in terminal",
+    "reveal.error": "Operation failed",
+    "reveal.errorReveal": "Failed to show in file browser",
+    "reveal.errorTerminal": "Failed to show in terminal"
   };
 
   /** Last path segment — the part that identifies the file at a glance. */
@@ -67,50 +70,11 @@ window.__ModuleLoader__.load({ id: "dsh-reveal-files", factory: (require) => {
     }
   }
 
-  /** Reveal-in-folder icon (line-art folder, theme colors via currentColor). */
-  function FolderIcon() {
-    return React.createElement(
-      "svg",
-      {
-        width: 14,
-        height: 14,
-        viewBox: "0 0 24 24",
-        fill: "none",
-        stroke: "currentColor",
-        strokeWidth: 2,
-        strokeLinecap: "round",
-        strokeLinejoin: "round",
-        "aria-hidden": true
-      },
-      React.createElement("path", { d: "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" })
-    );
-  }
-
-  /** Show-in-terminal icon (line-art terminal, `>_` inside a rounded frame). */
-  function TerminalIcon() {
-    return React.createElement(
-      "svg",
-      {
-        width: 14,
-        height: 14,
-        viewBox: "0 0 24 24",
-        fill: "none",
-        stroke: "currentColor",
-        strokeWidth: 2,
-        strokeLinecap: "round",
-        strokeLinejoin: "round",
-        "aria-hidden": true
-      },
-      React.createElement("polyline", { points: "4 17 10 11 4 5" }),
-      React.createElement("line", { x1: "12", y1: "19", x2: "20", y2: "19" })
-    );
-  }
-
   /**
-   * The produced-files row: label + openable file chips + two icon buttons
-   * (reveal in file browser / show paths in terminal). Standard props provide
-   * sessionId and useSessions; the icons POST the paths to the Host routes,
-   * which resolve them against the session cwd.
+   * The produced-files row: label + file chips, each with a per-file dropdown
+   * (Open / Reveal in file browser / Open in terminal). Standard props provide
+   * sessionId and useSessions; the reveal/terminal actions POST to the Host
+   * routes, which resolve the path against the session cwd.
    */
   function ProducedFilesReveal(props) {
     var paths = Array.isArray(props.matched) ? props.matched : [];
@@ -127,12 +91,12 @@ window.__ModuleLoader__.load({ id: "dsh-reveal-files", factory: (require) => {
       } catch (error) { /* cwd stays undefined */ }
     }
 
-    /** POST paths to one Host route; resolves to { ok, error } outcome. */
-    function post(url, failKey) {
+    /** POST one path to a Host route; resolves to { ok, error } outcome. */
+    function post(path, url, failKey) {
       return fetch(url, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ paths: paths, sessionId: sessionId, cwd: cwd })
+        body: JSON.stringify({ paths: [path], sessionId: sessionId, cwd: cwd })
       }).then(function (res) {
         return res.json().then(function (data) {
           if (!res.ok || data === null || data.ok !== true) {
@@ -141,37 +105,54 @@ window.__ModuleLoader__.load({ id: "dsh-reveal-files", factory: (require) => {
           return { ok: true };
         });
       }, function () {
-        return { ok: false, error: t("reveal.unknownError") };
+        return { ok: false, error: t("reveal.error") };
       });
     }
 
-    var state = React.useState({ folders: false, foldersError: null, terminal: false, terminalError: null });
-    var foldersBusy = state[0].folders;
-    var foldersError = state[0].foldersError;
-    var terminalBusy = state[0].terminal;
-    var terminalError = state[0].terminalError;
+    // Which chip's dropdown is open; per-open busy/error state.
+    var state = React.useState({ menuFor: null, busy: false, error: null });
+    var menuFor = state[0].menuFor;
+    var busy = state[0].busy;
+    var error = state[0].error;
     var setState = state[1];
 
-    var reveal = function () {
-      if (foldersBusy) return;
-      setState({ folders: true, foldersError: null, terminal: terminalBusy, terminalError: terminalError });
-      post("/api/reveal-files", "reveal.error").then(function (outcome) {
-        setState({ folders: false, foldersError: outcome.ok ? null : outcome.error, terminal: terminalBusy, terminalError: terminalError });
+    var toggleMenu = function (path) {
+      if (busy) return;
+      setState({ menuFor: menuFor === path ? null : path, busy: false, error: null });
+    };
+
+    var closeMenu = function () {
+      setState({ menuFor: null, busy: false, error: null });
+    };
+
+    var runAction = function (path, url, failKey) {
+      if (busy) return;
+      setState({ menuFor: path, busy: true, error: null });
+      post(path, url, failKey).then(function (outcome) {
+        setState(outcome.ok
+          ? { menuFor: null, busy: false, error: null }
+          : { menuFor: path, busy: false, error: outcome.error });
       });
     };
 
-    var showTerminal = function () {
-      if (terminalBusy) return;
-      setState({ folders: foldersBusy, foldersError: foldersError, terminal: true, terminalError: null });
-      post("/api/show-in-terminal", "reveal.errorTerminal").then(function (outcome) {
-        setState({ folders: foldersBusy, foldersError: foldersError, terminal: false, terminalError: outcome.ok ? null : outcome.error });
-      });
+    var openPath = function (path) {
+      if (busy) return;
+      closeMenu();
+      if (openFile !== undefined) openFile(path);
     };
 
-    var folderLabel = t("reveal.inFolder");
-    var folderTitle = foldersError === null ? folderLabel : String(foldersError);
-    var termLabel = t("reveal.inTerminal");
-    var termTitle = terminalError === null ? termLabel : String(terminalError);
+    // Clicking anywhere outside a chip closes the open dropdown.
+    var outsideRef = React.useRef(null);
+    React.useEffect(function () {
+      function onDocClick(event) {
+        var ref = outsideRef.current;
+        if (ref === null || ref === undefined) return;
+        if (ref.contains(event.target)) return;
+        setState({ menuFor: null, busy: false, error: null });
+      }
+      document.addEventListener("mousedown", onDocClick);
+      return function () { document.removeEventListener("mousedown", onDocClick); };
+    }, []);
 
     return React.createElement(
       "div",
@@ -181,42 +162,45 @@ window.__ModuleLoader__.load({ id: "dsh-reveal-files", factory: (require) => {
         "div",
         { className: "rfv-row", "data-produced-files-row": true },
         paths.map(function (path) {
+          var open = menuFor === path;
           return React.createElement(
-            "button",
-            {
-              type: "button",
-              key: path,
-              className: "rfv-file",
-              title: path,
-              onClick: function () { if (openFile !== undefined) openFile(path); }
-            },
-            basename(path)
+            "div",
+            { key: path, className: "rfv-chip", ref: outsideRef },
+            React.createElement(
+              "button",
+              {
+                type: "button",
+                className: "rfv-file" + (open ? " is-open" : ""),
+                title: path,
+                "aria-haspopup": "menu",
+                "aria-expanded": open,
+                onClick: function () { toggleMenu(path); }
+              },
+              basename(path)
+            ),
+            open && React.createElement(
+              "div",
+              { className: "rfv-menu", role: "menu" },
+              React.createElement(
+                "button",
+                { type: "button", role: "menuitem", className: "rfv-item", disabled: busy, onClick: function () { openPath(path); } },
+                t("reveal.open")
+              ),
+              React.createElement(
+                "button",
+                { type: "button", role: "menuitem", className: "rfv-item", disabled: busy, onClick: function () { runAction(path, "/api/reveal-files", "reveal.errorReveal"); } },
+                t("reveal.reveal")
+              ),
+              React.createElement(
+                "button",
+                { type: "button", role: "menuitem", className: "rfv-item", disabled: busy, onClick: function () { runAction(path, "/api/show-in-terminal", "reveal.errorTerminal"); } },
+                t("reveal.terminal")
+              ),
+              error !== null && React.createElement("div", { className: "rfv-error", role: "alert" }, String(error)),
+              busy && React.createElement("div", { className: "rfv-busy" }, "…")
+            )
           );
-        }),
-        React.createElement(
-          "button",
-          {
-            type: "button",
-            className: "rfv-reveal" + (foldersBusy ? " is-busy" : "") + (foldersError !== null ? " is-error" : ""),
-            disabled: foldersBusy,
-            title: folderTitle,
-            "aria-label": folderLabel,
-            onClick: reveal
-          },
-          React.createElement(FolderIcon, null)
-        ),
-        React.createElement(
-          "button",
-          {
-            type: "button",
-            className: "rfv-reveal" + (terminalBusy ? " is-busy" : "") + (terminalError !== null ? " is-error" : ""),
-            disabled: terminalBusy,
-            title: termTitle,
-            "aria-label": termLabel,
-            onClick: showTerminal
-          },
-          React.createElement(TerminalIcon, null)
-        )
+        })
       )
     );
   }
@@ -224,15 +208,17 @@ window.__ModuleLoader__.load({ id: "dsh-reveal-files", factory: (require) => {
   var css = [
     ".rfv-root{display:grid;grid-template-columns:max-content minmax(0,1fr);align-items:center;gap:6px 8px;margin-top:16px;font-size:13px;line-height:22px;position:relative}",
     ".rfv-label{color:var(--dsw-alias-label-tertiary);grid-area:1/1}",
-    ".rfv-row{flex-wrap:nowrap;grid-area:1/2;align-items:center;gap:8px;min-width:0;display:flex;overflow:hidden}",
-    ".rfv-file{text-overflow:ellipsis;white-space:nowrap;background:var(--dsw-alias-interactive-bg-hover);max-width:320px;color:var(--dsw-alias-label-secondary);font:inherit;cursor:pointer;border:none;border-radius:6px;flex:none;margin:0;padding:0 8px;overflow:hidden}",
+    ".rfv-row{flex-wrap:nowrap;grid-area:1/2;align-items:center;gap:8px;min-width:0;display:flex;overflow:visible}",
+    ".rfv-chip{position:relative;flex:none;min-width:0}",
+    ".rfv-file{text-overflow:ellipsis;white-space:nowrap;background:var(--dsw-alias-interactive-bg-hover);max-width:320px;color:var(--dsw-alias-label-secondary);font:inherit;cursor:pointer;border:none;border-radius:6px;margin:0;padding:0 8px;overflow:hidden}",
     ".rfv-file:hover{color:var(--dsw-alias-label-primary);text-decoration:underline}",
-    ".rfv-file:focus-visible{box-shadow:inset 0 0 0 2px var(--dsw-alias-border-l3);outline:none}",
-    ".rfv-reveal{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;flex:none;color:var(--dsw-alias-label-tertiary);background:transparent;border:none;border-radius:4px;cursor:pointer;padding:0;margin:0}",
-    ".rfv-reveal:hover{color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-interactive-bg-hover)}",
-    ".rfv-reveal:focus-visible{box-shadow:inset 0 0 0 2px var(--dsw-alias-border-l3);outline:none}",
-    ".rfv-reveal.is-busy{opacity:.6;cursor:wait}",
-    ".rfv-reveal.is-error{color:#ef4444}"
+    ".rfv-file.is-open{color:var(--dsw-alias-label-primary);text-decoration:underline}",
+    ".rfv-menu{position:absolute;top:calc(100% + 4px);left:0;z-index:30;display:flex;flex-direction:column;gap:2px;min-width:180px;background:var(--dsw-alias-surface-1,rgba(30,30,30,.98));border:1px solid var(--dsw-alias-border-l2,rgba(127,127,127,.22));border-radius:8px;padding:4px;box-shadow:0 8px 24px rgba(0,0,0,.28)}",
+    ".rfv-item{text-align:left;font:inherit;white-space:nowrap;color:var(--dsw-alias-label-secondary);background:transparent;border:none;border-radius:6px;cursor:pointer;margin:0;padding:5px 10px}",
+    ".rfv-item:hover:not(:disabled){color:var(--dsw-alias-label-primary);background:var(--dsw-alias-interactive-bg-hover)}",
+    ".rfv-item:disabled{opacity:.55;cursor:wait}",
+    ".rfv-error{color:#ef4444;font-size:12px;line-height:18px;padding:2px 10px 4px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
+    ".rfv-busy{color:var(--dsw-alias-label-tertiary);font-size:12px;padding:0 10px 2px}"
   ].join("");
 
   var tagId = "dsh-reveal-files/style.css";

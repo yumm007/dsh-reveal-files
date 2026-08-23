@@ -2,35 +2,29 @@
 
 [English](README.md) | [简体中文](README.zh.md)
 
-A dual-face DeepSeek Harness plugin that adds a **folder icon** next to the
-produced-files row (「产物」 in Chinese, "Produces" in English — the row of
-file chips under assistant messages). Clicking the icon reveals the turn's
-produced files in your **native file browser**:
-
-- 🍎 macOS → reveals in **Finder** (`open -R`, selects the file)
-- 🐧 Linux → opens the parent folder (`xdg-open`)
-- 🪟 Windows → selects in **Explorer** (`explorer /select,`)
-
-The original behavior — clicking a file chip opens it with its default
-application — is preserved unchanged.
+A dual-face DeepSeek Harness plugin that makes each produced-file chip in the
+「产物」/ "Produces" row (the row of file chips under assistant messages)
+open a **small dropdown menu** with per-file actions: open the file, reveal it
+in your native file browser, or open a terminal cd'ed into its directory.
 
 ## Features
 
-- Two inline, one-line icon buttons beside the produced-files chips; no extra row.
-- 📁 **Reveal in file browser** — macOS Finder (`open -R`, selects the file),
-  Linux file manager (`xdg-open` on the parent folder), Windows Explorer
-  (`explorer /select,`).
-- ⌨️ **Open in terminal** — opens a native terminal **frontmost** and cd's
-  into the produced file's directory for further work: Terminal.app on
-  macOS (activated to the front), `x-terminal-emulator` / `gnome-terminal` /
-  `konsole` on Linux, `cmd` on Windows.
-- Tooltip and `aria-label` for accessibility; labels follow the UI locale
-  (Simplified Chinese / English).
-- Multiple produced files in one turn are all handled (one window per file,
-  or one folder per parent directory on Linux).
+- Each produced file chip opens a compact **dropdown menu** on click — no
+  accidental direct opens, one menu per file:
+  - 📂 **Open** — open with the default application (the original behavior).
+  - 📁 **Show in file browser** — macOS Finder (`open -R`, selects the file),
+    Linux file manager (`xdg-open` on the parent folder), Windows Explorer
+    (`explorer /select,`).
+  - ⌨️ **Show paths in terminal** — opens a native terminal **frontmost** and
+    cd's into the file's directory for further work: Terminal.app on macOS
+    (activated to the front), `x-terminal-emulator` / `gnome-terminal` /
+    `konsole` on Linux, `cmd` on Windows.
+- Menu labels follow the UI locale (Simplified Chinese / English); the menu
+  items carry `role="menuitem"` and the chips expose `aria-haspopup` /
+  `aria-expanded`.
 - Relative paths are resolved against the session working directory.
-- Errors (e.g. sandbox denial, unsupported platform) surface as a red icon
-  with the reason in the tooltip, while the icon is disabled while busy.
+- Errors (e.g. sandbox denial, unsupported platform) surface inside the open
+  menu, which stays open while an action is in flight (items disabled).
 - Zero runtime dependencies beyond the harness itself — Host uses only
   `node:child_process`; the client uses only the platform's `react` seed.
 
@@ -66,20 +60,19 @@ dsh web
 ```
 
 The plugin loads as a bundle on boot: the Host half registers the
-`POST /api/reveal-files` route and the client half mounts the icon in the
-produced-files row.
+`POST /api/reveal-files` and `POST /api/show-in-terminal` routes and the
+client half mounts the drop-down menu in the produced-files row.
 
 ## Usage
 
 1. Let the assistant produce one or more files (any `write` / `edit` /
    mutation tool result in a turn).
 2. Under that message, find the produced-files row (「产物」 in Chinese, "Produces" in English) with the file chips.
-3. Click the folder icon next to the chips — the file(s) open in your native
-   file browser, selected or revealed; or click the terminal icon to open a
-   terminal window brought to the front, already cd'ed into the file's
-   directory.
-4. Hover an icon to see the tooltip; if the operation failed, the tooltip shows
-   the error instead and the icon turns red.
+3. Click a file chip — a small menu opens with **Open** / **Show in file
+   browser** / **Show paths in terminal**; pick one. The menu closes on
+   selection or on an outside click.
+4. If an action fails, the error appears inside the menu in red; the items
+   stay disabled while the action is running.
 
 ## Configuration
 
