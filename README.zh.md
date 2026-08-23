@@ -16,9 +16,10 @@ DeepSeek Harness 双面插件:把「产物」行(产出文件行)里的每个文
     Linux 文件管理器(`xdg-open` 打开所在目录)、Windows Explorer
     (`explorer /select,`)。
   - ⌨️ **在终端中显示路径** —— 打开一个系统终端窗口并**置顶激活**,已
-    `cd` 进入文件所在目录,可直接继续操作:macOS Terminal.app(激活到
-    前台)、Linux `x-terminal-emulator` / `gnome-terminal` / `konsole`、
-    Windows `cmd`。
+    `cd` 进入文件所在目录,可直接继续操作。macOS 上会**复用已打开的
+    Terminal**:有窗口时在可见窗口里新开一个 tab,Terminal 未运行时才
+    新建窗口;Linux(`x-terminal-emulator` / `gnome-terminal` / `konsole`)
+    与 Windows(`cmd`)每次启动新终端窗口。
 - 菜单标签跟随界面语言(简体中文 / 英文);菜单项带 `role="menuitem"`,
   chip 暴露 `aria-haspopup` / `aria-expanded`。
 - 相对路径按会话工作目录解析。

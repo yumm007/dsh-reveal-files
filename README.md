@@ -17,9 +17,11 @@ in your native file browser, or open a terminal cd'ed into its directory.
     Linux file manager (`xdg-open` on the parent folder), Windows Explorer
     (`explorer /select,`).
   - ⌨️ **Show paths in terminal** — opens a native terminal **frontmost** and
-    cd's into the file's directory for further work: Terminal.app on macOS
-    (activated to the front), `x-terminal-emulator` / `gnome-terminal` /
-    `konsole` on Linux, `cmd` on Windows.
+    cd's into the file's directory for further work. On macOS it **reuses
+    the open Terminal window**: a new tab in the front window when one
+    exists, or a new window when Terminal was not running. Linux
+    (`x-terminal-emulator` / `gnome-terminal` / `konsole`) and Windows
+    (`cmd`) launch a fresh terminal window each time.
 - Menu labels follow the UI locale (Simplified Chinese / English); the menu
   items carry `role="menuitem"` and the chips expose `aria-haspopup` /
   `aria-expanded`.
