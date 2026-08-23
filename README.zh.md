@@ -38,6 +38,11 @@ DeepSeek Harness 双面插件:在每条助手消息的「产物」行(产出文�
 dsh plugin --profile web add github:yumm007/dsh-reveal-files#main
 ```
 
+> **从源码构建。** GitHub 安装会在安装时构建包;pnpm 会请求一次
+> `allowBuilds` 授权,批准后继续。若构建被阻止,把包加入 profile
+> `pnpm-workspace.yaml` 的 `allowBuilds` 后重新执行命令;发布 npm
+> 预构建包则可完全跳过这一步。
+
 `dsh plugin` 会在 profile 目录内把参数转发给 pnpm,随后自动对账
 `dsh.profile.bundles`。因为包声明了 `dsh.bundle.patch`,它会自动加入
 profile 层栈——无需手动编辑 `cordis.yml`。
@@ -97,12 +102,13 @@ dsh plugin --profile web remove dsh-reveal-files
 
 ## 开发
 
-本地开发时可直接安装工作区副本(从磁盘安装,编辑后通过
-`dsh plugin --profile web update dsh-reveal-files` 更新):
+本地开发时直接从磁盘安装,每次编辑后**重新执行 `add`** 即可——profile
+依赖是硬链接,已安装代码会跟随你的工作区:
 
 ```bash
 dsh plugin --profile web add file:/绝对路径/dsh-reveal-files
-# 编辑后: dsh plugin --profile web update dsh-reveal-files
+# 编辑后:         dsh plugin --profile web add file:/绝对路径/dsh-reveal-files
+# 或强制重装:     pnpm --dir ~/.dsh/profiles/web install --force
 ```
 
 webServer 以 rev 哈希 URL 从磁盘提供 client bundle,刷新即可看到 Client

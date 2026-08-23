@@ -3,8 +3,9 @@
 [English](README.md) | [简体中文](README.zh.md)
 
 A dual-face DeepSeek Harness plugin that adds a **folder icon** next to the
-"Produces" row (the produced-files row under assistant messages). Clicking the
-icon reveals the turn's produced files in your **native file browser**:
+produced-files row (「产物」 in Chinese, "Produces" in English — the row of
+file chips under assistant messages). Clicking the icon reveals the turn's
+produced files in your **native file browser**:
 
 - 🍎 macOS → reveals in **Finder** (`open -R`, selects the file)
 - 🐧 Linux → opens the parent folder (`xdg-open`)
@@ -40,6 +41,12 @@ application — is preserved unchanged.
 dsh plugin --profile web add github:yumm007/dsh-reveal-files#main
 ```
 
+> **Building from source.** GitHub installs build the package during
+> install; pnpm asks once for an `allowBuilds` grant, then proceeds. If it
+> does (or if the build is blocked), add the package to
+> `allowBuilds` in your profile's `pnpm-workspace.yaml` and re-run the
+> command. A prebuilt npm release skips this step entirely.
+
 `dsh plugin` forwards the arguments to pnpm inside the profile directory and
 then reconciles `dsh.profile.bundles`. Because the package declares
 `dsh.bundle.patch`, it joins the profile layer stack automatically — no manual
@@ -59,7 +66,7 @@ produced-files row.
 
 1. Let the assistant produce one or more files (any `write` / `edit` /
    mutation tool result in a turn).
-2. Under that message, find the "Produces" row with the file chips.
+2. Under that message, find the produced-files row (「产物」 in Chinese, "Produces" in English) with the file chips.
 3. Click the folder icon next to the chips — the file(s) open in your native
    file browser, selected or revealed.
 4. Hover the icon to see the tooltip; if the reveal failed, the tooltip shows
@@ -107,12 +114,14 @@ the web profile afterwards.
 
 ## Development
 
-For local development against a checkout (installs from disk, so edits are
-picked up by `dsh plugin --profile web update dsh-reveal-files`):
+For local development against a checkout, install it from disk and re-run
+the `add` after each edit — the profile's dependency is a hard link, so the
+installed code follows your working tree:
 
 ```bash
 dsh plugin --profile web add file:/absolute/path/to/dsh-reveal-files
-# after editing: dsh plugin --profile web update dsh-reveal-files
+# after editing:        dsh plugin --profile web add file:/absolute/path/to/dsh-reveal-files
+# or force a reinstall: pnpm --dir ~/.dsh/profiles/web install --force
 ```
 
 The web server serves the client bundle from disk with a rev-hashed URL, so a
