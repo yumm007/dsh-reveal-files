@@ -20,8 +20,9 @@ application — is preserved unchanged.
 - 📁 **Reveal in file browser** — macOS Finder (`open -R`, selects the file),
   Linux file manager (`xdg-open` on the parent folder), Windows Explorer
   (`explorer /select,`).
-- ⌨️ **Show paths in terminal** — opens a native terminal window and echoes the
-  paths: Terminal.app on macOS, `x-terminal-emulator` / `gnome-terminal` /
+- ⌨️ **Open in terminal** — opens a native terminal **frontmost** and cd's
+  into the produced file's directory for further work: Terminal.app on
+  macOS (activated to the front), `x-terminal-emulator` / `gnome-terminal` /
   `konsole` on Linux, `cmd` on Windows.
 - Tooltip and `aria-label` for accessibility; labels follow the UI locale
   (Simplified Chinese / English).
@@ -75,7 +76,8 @@ produced-files row.
 2. Under that message, find the produced-files row (「产物」 in Chinese, "Produces" in English) with the file chips.
 3. Click the folder icon next to the chips — the file(s) open in your native
    file browser, selected or revealed; or click the terminal icon to open a
-   terminal window that prints the paths.
+   terminal window brought to the front, already cd'ed into the file's
+   directory.
 4. Hover an icon to see the tooltip; if the operation failed, the tooltip shows
    the error instead and the icon turns red.
 
@@ -98,7 +100,7 @@ Override these in the profile's own `cordis.patch.yml` if you need to.
 
 | Layer | File | Responsibility |
 | --- | --- | --- |
-| Host | `lib/index.js` | Cordis plugin row `dsh-reveal-files` (injects `webServer` and `sessions`) and registers `POST /api/reveal-files` (reveal) and `POST /api/show-in-terminal` (terminal echo). Runs `open -R` / `xdg-open` / `explorer /select,` and `osascript` / terminal emulators per platform, resolves relative paths against the session cwd, and returns JSON results. |
+| Host | `lib/index.js` | Cordis plugin row `dsh-reveal-files` (injects `webServer` and `sessions`) and registers `POST /api/reveal-files` (reveal) and `POST /api/show-in-terminal` (frontmost terminal cd). Runs `open -R` / `xdg-open` / `explorer /select,` and `osascript` / terminal emulators per platform, resolves relative paths against the session cwd, and returns JSON results. |
 | Client | `client/client.js` | Web module (`window.__ModuleLoader__.load`), registered by the harness client module system. Claims the `conversation.chat.turnTail` chain with `priority: -1` and a `select` that reads the turn's `deliverables` data (the same vocabulary the built-in row uses), then renders the chips row plus the two icon buttons. |
 
 ### Why `priority: -1`?
