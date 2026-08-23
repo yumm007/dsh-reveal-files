@@ -14,13 +14,17 @@ window.__ModuleLoader__.load({ id: "dsh-reveal-files", factory: (require) => {
   var zh = {
     "reveal.label": "产物",
     "reveal.inFolder": "在文件浏览器中显示",
+    "reveal.inTerminal": "在终端中显示路径",
     "reveal.error": "在文件浏览器中显示失败",
+    "reveal.errorTerminal": "在终端中显示失败",
     "reveal.unknownError": "操作失败"
   };
   var en = {
     "reveal.label": "Produced",
     "reveal.inFolder": "Show in file browser",
+    "reveal.inTerminal": "Show paths in terminal",
     "reveal.error": "Failed to show in file browser",
+    "reveal.errorTerminal": "Failed to show in terminal",
     "reveal.unknownError": "Operation failed"
   };
 
@@ -82,10 +86,31 @@ window.__ModuleLoader__.load({ id: "dsh-reveal-files", factory: (require) => {
     );
   }
 
+  /** Show-in-terminal icon (line-art terminal, `>_` inside a rounded frame). */
+  function TerminalIcon() {
+    return React.createElement(
+      "svg",
+      {
+        width: 14,
+        height: 14,
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: 2,
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        "aria-hidden": true
+      },
+      React.createElement("polyline", { points: "4 17 10 11 4 5" }),
+      React.createElement("line", { x1: "12", y1: "19", x2: "20", y2: "19" })
+    );
+  }
+
   /**
-   * The produced-files row: label + openable file chips + a reveal icon.
-   * Standard props provide sessionId and useSessions; the icon sends the
-   * paths to the Host route, which resolves them against the session cwd.
+   * The produced-files row: label + openable file chips + two icon buttons
+   * (reveal in file browser / show paths in terminal). Standard props provide
+   * sessionId and useSessions; the icons POST the paths to the Host routes,
+   * which resolve them against the session cwd.
    */
   function ProducedFilesReveal(props) {
     var paths = Array.isArray(props.matched) ? props.matched : [];
@@ -102,34 +127,51 @@ window.__ModuleLoader__.load({ id: "dsh-reveal-files", factory: (require) => {
       } catch (error) { /* cwd stays undefined */ }
     }
 
-    var state = React.useState({ busy: false, error: null });
-    var busy = state[0].busy;
-    var error = state[0].error;
-    var setState = state[1];
-
-    var reveal = function () {
-      if (busy) return;
-      setState({ busy: true, error: null });
-      fetch("/api/reveal-files", {
+    /** POST paths to one Host route; resolves to { ok, error } outcome. */
+    function post(url, failKey) {
+      return fetch(url, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ paths: paths, sessionId: sessionId, cwd: cwd })
       }).then(function (res) {
         return res.json().then(function (data) {
           if (!res.ok || data === null || data.ok !== true) {
-            var message = data !== null && typeof data === "object" && typeof data.error === "string" ? data.error : t("reveal.error");
-            setState({ busy: false, error: message });
-          } else {
-            setState({ busy: false, error: null });
+            return { ok: false, error: data !== null && typeof data === "object" && typeof data.error === "string" ? data.error : t(failKey) };
           }
+          return { ok: true };
         });
       }, function () {
-        setState({ busy: false, error: t("reveal.unknownError") });
+        return { ok: false, error: t("reveal.unknownError") };
+      });
+    }
+
+    var state = React.useState({ folders: false, foldersError: null, terminal: false, terminalError: null });
+    var foldersBusy = state[0].folders;
+    var foldersError = state[0].foldersError;
+    var terminalBusy = state[0].terminal;
+    var terminalError = state[0].terminalError;
+    var setState = state[1];
+
+    var reveal = function () {
+      if (foldersBusy) return;
+      setState({ folders: true, foldersError: null, terminal: terminalBusy, terminalError: terminalError });
+      post("/api/reveal-files", "reveal.error").then(function (outcome) {
+        setState({ folders: false, foldersError: outcome.ok ? null : outcome.error, terminal: terminalBusy, terminalError: terminalError });
       });
     };
 
-    var label = t("reveal.inFolder");
-    var title = error === null ? label : String(error);
+    var showTerminal = function () {
+      if (terminalBusy) return;
+      setState({ folders: foldersBusy, foldersError: foldersError, terminal: true, terminalError: null });
+      post("/api/show-in-terminal", "reveal.errorTerminal").then(function (outcome) {
+        setState({ folders: foldersBusy, foldersError: foldersError, terminal: false, terminalError: outcome.ok ? null : outcome.error });
+      });
+    };
+
+    var folderLabel = t("reveal.inFolder");
+    var folderTitle = foldersError === null ? folderLabel : String(foldersError);
+    var termLabel = t("reveal.inTerminal");
+    var termTitle = terminalError === null ? termLabel : String(terminalError);
 
     return React.createElement(
       "div",
@@ -155,13 +197,25 @@ window.__ModuleLoader__.load({ id: "dsh-reveal-files", factory: (require) => {
           "button",
           {
             type: "button",
-            className: "rfv-reveal" + (busy ? " is-busy" : "") + (error !== null ? " is-error" : ""),
-            disabled: busy,
-            title: title,
-            "aria-label": label,
+            className: "rfv-reveal" + (foldersBusy ? " is-busy" : "") + (foldersError !== null ? " is-error" : ""),
+            disabled: foldersBusy,
+            title: folderTitle,
+            "aria-label": folderLabel,
             onClick: reveal
           },
           React.createElement(FolderIcon, null)
+        ),
+        React.createElement(
+          "button",
+          {
+            type: "button",
+            className: "rfv-reveal" + (terminalBusy ? " is-busy" : "") + (terminalError !== null ? " is-error" : ""),
+            disabled: terminalBusy,
+            title: termTitle,
+            "aria-label": termLabel,
+            onClick: showTerminal
+          },
+          React.createElement(TerminalIcon, null)
         )
       )
     );

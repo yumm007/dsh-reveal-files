@@ -16,11 +16,17 @@ application — is preserved unchanged.
 
 ## Features
 
-- Inline, one-line icon button beside the produced-files chips; no extra row.
-- Tooltip ("Show in file browser") and `aria-label` for accessibility.
-- Locale-aware labels (Simplified Chinese / English, follows the UI locale).
-- Multiple produced files in one turn are all revealed (one Finder window per
-  file, or one folder per parent directory on Linux).
+- Two inline, one-line icon buttons beside the produced-files chips; no extra row.
+- 📁 **Reveal in file browser** — macOS Finder (`open -R`, selects the file),
+  Linux file manager (`xdg-open` on the parent folder), Windows Explorer
+  (`explorer /select,`).
+- ⌨️ **Show paths in terminal** — opens a native terminal window and echoes the
+  paths: Terminal.app on macOS, `x-terminal-emulator` / `gnome-terminal` /
+  `konsole` on Linux, `cmd` on Windows.
+- Tooltip and `aria-label` for accessibility; labels follow the UI locale
+  (Simplified Chinese / English).
+- Multiple produced files in one turn are all handled (one window per file,
+  or one folder per parent directory on Linux).
 - Relative paths are resolved against the session working directory.
 - Errors (e.g. sandbox denial, unsupported platform) surface as a red icon
   with the reason in the tooltip, while the icon is disabled while busy.
@@ -68,8 +74,9 @@ produced-files row.
    mutation tool result in a turn).
 2. Under that message, find the produced-files row (「产物」 in Chinese, "Produces" in English) with the file chips.
 3. Click the folder icon next to the chips — the file(s) open in your native
-   file browser, selected or revealed.
-4. Hover the icon to see the tooltip; if the reveal failed, the tooltip shows
+   file browser, selected or revealed; or click the terminal icon to open a
+   terminal window that prints the paths.
+4. Hover an icon to see the tooltip; if the operation failed, the tooltip shows
    the error instead and the icon turns red.
 
 ## Configuration
@@ -91,8 +98,8 @@ Override these in the profile's own `cordis.patch.yml` if you need to.
 
 | Layer | File | Responsibility |
 | --- | --- | --- |
-| Host | `lib/index.js` | Cordis plugin row `dsh-reveal-files` (injects `webServer` and `sessions`) and registers `POST /api/reveal-files`. Runs `open -R` / `xdg-open` / `explorer /select,` per platform, resolves relative paths against the session cwd, and returns JSON results. |
-| Client | `client/client.js` | Web module (`window.__ModuleLoader__.load`), registered by the harness client module system. Claims the `conversation.chat.turnTail` chain with `priority: -1` and a `select` that reads the turn's `deliverables` data (the same vocabulary the built-in row uses), then renders the chips row plus the reveal icon. |
+| Host | `lib/index.js` | Cordis plugin row `dsh-reveal-files` (injects `webServer` and `sessions`) and registers `POST /api/reveal-files` (reveal) and `POST /api/show-in-terminal` (terminal echo). Runs `open -R` / `xdg-open` / `explorer /select,` and `osascript` / terminal emulators per platform, resolves relative paths against the session cwd, and returns JSON results. |
+| Client | `client/client.js` | Web module (`window.__ModuleLoader__.load`), registered by the harness client module system. Claims the `conversation.chat.turnTail` chain with `priority: -1` and a `select` that reads the turn's `deliverables` data (the same vocabulary the built-in row uses), then renders the chips row plus the two icon buttons. |
 
 ### Why `priority: -1`?
 

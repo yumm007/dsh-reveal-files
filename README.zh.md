@@ -13,11 +13,16 @@ DeepSeek Harness 双面插件:在每条助手消息的「产物」行(产出文�
 
 ## 功能特性
 
-- 内联单行图标按钮,紧贴产物文件的 chips,不额外占行。
-- Tooltip(「在文件浏览器中显示」)与 `aria-label` 无障碍标注。
-- 标签跟随界面语言(简体中文 / 英文)。
-- 一个回合产出多个文件时会全部定位(每个文件一个 Finder 窗口,或 Linux
-  下每个父目录打开一个文件夹)。
+- 两个内联单行图标按钮,紧贴产物文件的 chips,不额外占行。
+- 📁 **在文件浏览器中显示** —— macOS Finder(`open -R`,会选中文件)、
+  Linux 文件管理器(`xdg-open` 打开所在目录)、Windows Explorer
+  (`explorer /select,`)。
+- ⌨️ **在终端中显示路径** —— 打开一个系统终端窗口并打印路径:macOS
+  Terminal.app、Linux `x-terminal-emulator` / `gnome-terminal` / `konsole`、
+  Windows `cmd`。
+- Tooltip 与 `aria-label` 无障碍标注;标签跟随界面语言(简体中文 / 英文)。
+- 一个回合产出多个文件时会全部处理(每个文件一个窗口,或 Linux 下每个
+  父目录打开一个文件夹)。
 - 相对路径按会话工作目录解析。
 - 出错时(如沙箱拒绝、平台不支持)图标变红,原因在 Tooltip 中显示;
   定位中图标禁用。
@@ -60,7 +65,8 @@ Client 半部在产物文件行挂载图标。
 
 1. 让助手在一个回合内产出若干文件(任意 `write` / `edit` / 变更类工具结果)。
 2. 在该消息下方找到带文件 chips 的「产物」行。
-3. 点击 chips 旁的文件夹图标——文件在系统文件浏览器中打开并被选中或定位。
+3. 点击 chips 旁的文件夹图标——文件在系统文件浏览器中打开并被选中或定位;
+   或点击终端图标——打开一个终端窗口并打印路径。
 4. 悬停图标可看 Tooltip;若定位失败,Tooltip 会显示错误原因,图标变红。
 
 ## 配置
@@ -82,8 +88,8 @@ Client 半部在产物文件行挂载图标。
 
 | 层 | 文件 | 说明 |
 | --- | --- | --- |
-| Host | `lib/index.js` | Cordis 插件行 `dsh-reveal-files`(注入 `webServer` 与 `sessions`),注册 `POST /api/reveal-files`。按平台执行 `open -R` / `xdg-open` / `explorer /select,`,相对路径按会话 cwd 解析,返回 JSON 结果。 |
-| Client | `client/client.js` | web 模块(`window.__ModuleLoader__.load`),由 Harness 客户端模块系统注册。以 `priority: -1` 认领 `conversation.chat.turnTail` 链条,`select` 读取回合的 `deliverables` 数据(与内置行同一数据源),渲染 chips 行与定位图标。 |
+| Host | `lib/index.js` | Cordis 插件行 `dsh-reveal-files`(注入 `webServer` 与 `sessions`),注册 `POST /api/reveal-files`(文件浏览器定位)与 `POST /api/show-in-terminal`(终端打印)。按平台执行 `open -R` / `xdg-open` / `explorer /select,` 与 `osascript` / 终端模拟器,相对路径按会话 cwd 解析,返回 JSON 结果。 |
+| Client | `client/client.js` | web 模块(`window.__ModuleLoader__.load`),由 Harness 客户端模块系统注册。以 `priority: -1` 认领 `conversation.chat.turnTail` 链条,`select` 读取回合的 `deliverables` 数据(与内置行同一数据源),渲染 chips 行与两个图标按钮。 |
 
 ### 为什么用 `priority: -1`?
 
