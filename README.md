@@ -4,8 +4,9 @@
 
 A dual-face DeepSeek Harness plugin that makes each produced-file chip in the
 「产物」/ "Produces" row (the row of file chips under assistant messages)
-open a **small dropdown menu** with per-file actions: open the file, reveal it
-in your native file browser, or open a terminal cd'ed into its directory.
+open a **small dropdown menu** with per-file actions: open the file, copy its
+path, reveal it in your native file browser, or open a terminal cd'ed into
+the file's directory.
 
 ## Features
 
@@ -16,11 +17,11 @@ in your native file browser, or open a terminal cd'ed into its directory.
   - 📁 **Show in file browser** — macOS Finder (`open -R`, selects the file),
     Linux file manager (`xdg-open` on the parent folder), Windows Explorer
     (`explorer /select,`).
-  - ⌨️ **Show paths in terminal** — opens a native terminal **frontmost** and
-    cd's into the file's directory for further work: Terminal.app on macOS,
-    `x-terminal-emulator` / `gnome-terminal` / `konsole` on Linux, or `cmd`
-    on Windows. Every trigger opens a fresh window (each action gets its own
-    terminal, no extra permissions needed).
+  - ⌨️ **Open the file's directory in terminal** — opens a native terminal
+    **frontmost**, cd'ed into the file's parent directory for further work:
+    Terminal.app on macOS, `x-terminal-emulator` / `gnome-terminal` /
+    `konsole` on Linux, or `cmd` on Windows. Every trigger opens a fresh
+    window (each action gets its own terminal, no extra permissions needed).
 - Menu labels follow the UI locale (Simplified Chinese / English); the menu
   items carry `role="menuitem"` and the chips expose `aria-haspopup` /
   `aria-expanded`.
@@ -70,9 +71,9 @@ client half mounts the drop-down menu in the produced-files row.
 1. Let the assistant produce one or more files (any `write` / `edit` /
    mutation tool result in a turn).
 2. Under that message, find the produced-files row (「产物」 in Chinese, "Produces" in English) with the file chips.
-3. Click a file chip — a small menu opens with **Open** / **Show in file
-   browser** / **Show paths in terminal**; pick one. The menu closes on
-   selection or on an outside click.
+3. Click a file chip — a small menu opens with **Open** / **Copy file
+   path** / **Show in file browser** / **Open the file's directory in
+   terminal**; pick one. The menu closes on selection or on an outside click.
 4. If an action fails, the error appears inside the menu in red; the items
    stay disabled while the action is running.
 
