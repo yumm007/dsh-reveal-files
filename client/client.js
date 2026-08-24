@@ -229,7 +229,8 @@ window.__ModuleLoader__.load({ id: "dsh-reveal-files", factory: (require) => {
                 "aria-expanded": open,
                 onClick: function () { toggleMenu(path); }
               },
-              basename(path)
+              basename(path),
+              React.createElement("span", { className: "rfv-caret" + (open ? " is-up" : ""), "aria-hidden": true })
             ),
             open && React.createElement(
               "div",
@@ -271,6 +272,8 @@ window.__ModuleLoader__.load({ id: "dsh-reveal-files", factory: (require) => {
     ".rfv-file{text-overflow:ellipsis;white-space:nowrap;background:var(--dsw-alias-interactive-bg-hover);max-width:320px;color:var(--dsw-alias-label-secondary);font:inherit;cursor:pointer;border:none;border-radius:6px;margin:0;padding:0 8px;overflow:hidden}",
     ".rfv-file:hover{color:var(--dsw-alias-label-primary);text-decoration:underline}",
     ".rfv-file.is-open{color:var(--dsw-alias-label-primary);text-decoration:underline}",
+    ".rfv-caret{display:inline-block;width:0;height:0;margin-left:5px;vertical-align:middle;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid currentColor;opacity:.55;transition:transform .15s ease}",
+    ".rfv-caret.is-up{transform:rotate(180deg);opacity:.9}",
     ".rfv-menu{position:absolute;top:calc(100% + 4px);left:0;z-index:30;display:flex;flex-direction:column;gap:2px;min-width:150px;width:max-content;max-width:240px;background:color-mix(in srgb,var(--dsw-alias-bg-overlay) 88%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;padding:4px;box-shadow:0 8px 24px rgba(0,0,0,.22)}",
     ".rfv-item{text-align:left;font:inherit;white-space:nowrap;color:var(--dsw-alias-label-secondary);background:transparent;border:none;border-radius:6px;cursor:pointer;margin:0;padding:5px 10px}",
     ".rfv-item:hover:not(:disabled){color:var(--dsw-alias-label-primary);background:var(--dsw-alias-interactive-bg-hover)}",
